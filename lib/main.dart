@@ -10,7 +10,7 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);
+  await Supabase.initialize(url: _supabaseUrl, publishableKey: _supabaseAnonKey);
   await AuthService().tryAutoLogin();
   runApp(const ProviderScope(child: StonksApp()));
 }
