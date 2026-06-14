@@ -46,9 +46,11 @@ lib/
 │   │   └── holding_detail_screen.dart  — dettaglio: grafico storico, posizione, transazioni
 │   ├── transactions/
 │   │   ├── transactions_screen.dart     — lista tx con swipe-to-delete
-│   │   └── add_transaction_screen.dart — form buy/sell/dividend
+│   │   ├── add_transaction_screen.dart — form buy/sell/dividend
+│   │   └── import_csv_screen.dart      — import CSV bulk con anteprima
+│   ├── dividends/dividends_screen.dart — tracker dividendi: totale, bar chart mensile, per simbolo
 │   ├── watchlist/watchlist_screen.dart  — watchlist con target price
-│   └── shell_screen.dart               — NavigationBar 4 tab
+│   └── shell_screen.dart               — NavigationBar 5 tab
 └── widgets/
     ├── holding_tile.dart      — card holding con P&L e variazione giornaliera
     └── allocation_chart.dart  — PieChart allocazione per simbolo
@@ -71,11 +73,11 @@ lib/
 - `STONKS_AES_KEY` — chiave AES-256 base64 (opzionale, default built-in)
 
 ## STATO SESSIONE — aggiornato 2026-06-14
-- Progetto creato da zero. App funzionale con 4 tab.
-- `MarketService` + `providers.dart`: storico prezzi (Yahoo Finance range/interval), conversione valuta FX, `portfolioSummaryProvider` tutto in EUR.
-- `HoldingDetailScreen`: grafico LineChart fl_chart, selettore range 1G/1S/1M/3M/1A/5A, linea tratteggiata pm, card posizione (shares/avgCost/valore/P&L), lista transazioni filtrate per simbolo.
-- `HoldingTile` tappabile → `context.push('/holding', extra: holding)`.
+- App funzionale con 5 tab: Home, Portfolio, Transazioni, Dividendi, Watchlist.
+- `HoldingDetailScreen`: grafico LineChart storico, selettore range, linea pm tratteggiata, posizione card, lista tx.
+- `DividendsScreen` (tab 4): totale all-time, bar chart mensile fl_chart, breakdown per simbolo con progress bar, lista transazioni tipo dividend.
+- `ImportCsvScreen` (`/import-csv`): parsing CSV con anteprima, supporto date multiple, normalizzazione tipo (acquisto/buy/etc), import bulk sequenziale.
+- `.github/workflows/build.yml`: CI che builda APK split-per-abi su ogni push main, artefatti 30gg.
 - TODO:
-  - [ ] Dividend tracker dedicato
-  - [ ] Import CSV transazioni
-  - [ ] GitHub Actions per build APK automatica
+  - [ ] Ricerca simbolo/lookup nel form add-transaction
+  - [ ] Performance chart portafoglio storico (value nel tempo)
