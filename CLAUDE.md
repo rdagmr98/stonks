@@ -41,7 +41,9 @@ lib/
 ├── screens/
 │   ├── auth/login_screen.dart
 │   ├── dashboard/dashboard_screen.dart  — valore totale, P&L, allocazione pie
-│   ├── portfolio/portfolio_screen.dart  — lista holdings ordinata per valore
+│   ├── portfolio/
+│   │   ├── portfolio_screen.dart        — lista holdings ordinata per valore
+│   │   └── holding_detail_screen.dart  — dettaglio: grafico storico, posizione, transazioni
 │   ├── transactions/
 │   │   ├── transactions_screen.dart     — lista tx con swipe-to-delete
 │   │   └── add_transaction_screen.dart — form buy/sell/dividend
@@ -68,11 +70,12 @@ lib/
 - `GH_TOKEN` — Personal Access Token GitHub (scope: repo)
 - `STONKS_AES_KEY` — chiave AES-256 base64 (opzionale, default built-in)
 
-## STATO SESSIONE — aggiornato 2026-06-13
+## STATO SESSIONE — aggiornato 2026-06-14
 - Progetto creato da zero. App funzionale con 4 tab.
+- `MarketService` + `providers.dart`: storico prezzi (Yahoo Finance range/interval), conversione valuta FX, `portfolioSummaryProvider` tutto in EUR.
+- `HoldingDetailScreen`: grafico LineChart fl_chart, selettore range 1G/1S/1M/3M/1A/5A, linea tratteggiata pm, card posizione (shares/avgCost/valore/P&L), lista transazioni filtrate per simbolo.
+- `HoldingTile` tappabile → `context.push('/holding', extra: holding)`.
 - TODO:
-  - [ ] Aggiungere schermata dettaglio holding (grafico storico prezzi)
   - [ ] Dividend tracker dedicato
   - [ ] Import CSV transazioni
   - [ ] GitHub Actions per build APK automatica
-  - [ ] Impostare GH_TOKEN nel build
