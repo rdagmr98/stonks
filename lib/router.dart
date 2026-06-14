@@ -6,6 +6,8 @@ import 'screens/portfolio/portfolio_screen.dart';
 import 'screens/portfolio/holding_detail_screen.dart';
 import 'screens/transactions/transactions_screen.dart';
 import 'screens/transactions/add_transaction_screen.dart';
+import 'screens/transactions/import_csv_screen.dart';
+import 'screens/dividends/dividends_screen.dart';
 import 'screens/watchlist/watchlist_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/shell_screen.dart';
@@ -32,6 +34,7 @@ final router = GoRouter(
     GoRoute(path: '/setup', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/add-transaction', builder: (_, __) => const AddTransactionScreen()),
+    GoRoute(path: '/import-csv', builder: (_, __) => const ImportCsvScreen()),
     GoRoute(
       path: '/holding',
       builder: (_, state) => HoldingDetailScreen(holding: state.extra as Holding),
@@ -42,6 +45,7 @@ final router = GoRouter(
         GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
         GoRoute(path: '/portfolio', builder: (_, __) => const PortfolioScreen()),
         GoRoute(path: '/transactions', builder: (_, __) => const TransactionsScreen()),
+        GoRoute(path: '/dividends', builder: (_, __) => const DividendsScreen()),
         GoRoute(path: '/watchlist', builder: (_, __) => const WatchlistScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],

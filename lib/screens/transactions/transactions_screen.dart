@@ -18,7 +18,16 @@ class TransactionsScreen extends ConsumerWidget {
     final txAsync = ref.watch(transactionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transazioni')),
+      appBar: AppBar(
+        title: const Text('Transazioni'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file_outlined),
+            tooltip: 'Importa CSV',
+            onPressed: () => context.push('/import-csv'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/add-transaction'),
         backgroundColor: kPrimary,
