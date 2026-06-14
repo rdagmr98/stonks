@@ -1,62 +1,56 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart' show sha256;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_user.dart';
-import 'gh_db_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._();
   factory AuthService() => _instance;
   AuthService._();
 
-  final _db = GhDbService();
+  final _sb = Supabase.instance.client;
+
   AppUser? _currentUser;
   AppUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
-  static String _hash(String password) =>
-      sha256.convert(utf8.encode(password)).toString();
+  Future<void> loadCurrentUser() async {
+    final user = _sb.auth.currentUser;
+    if (user == null) { _currentUser = null; return; }
+    final profile = await _sb.from('profiles').select().eq('id', user.id).maybeSingle();
+    if (profile == null) { _currentUser = null; return; }
+    _currentUser = AppUser.fromProfile(profile, user.email ?? '');
+  }
 
-  Future<bool> login(String username, String password) async {
+  Future<String?> login(String email, String password) async {
     try {
-      final (list, _) = await _db.readList('users.json');
-      final hash = _hash(password);
-      final match = list
-          .map((e) => AppUser.fromJson(e as Map<String, dynamic>))
-          .where((u) => u.username == username && u.passwordHash == hash)
-          .firstOrNull;
-      if (match == null) return false;
-      _currentUser = match;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('current_user_id', match.id);
-      return true;
-    } catch (_) {
-      return false;
+      await _sb.auth.signInWithPassword(email: email, password: password);
+      await loadCurrentUser();
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    }
+  }
+
+  Future<String?> register(String email, String password, String username) async {
+    try {
+      await _sb.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': username},
+      );
+      await loadCurrentUser();
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
     }
   }
 
   Future<void> logout() async {
+    await _sb.auth.signOut();
     _currentUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('current_user_id');
-    _db.invalidateAll();
   }
 
   Future<bool> tryAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getString('current_user_id');
-    if (id == null) return false;
-    try {
-      final (list, _) = await _db.readList('users.json');
-      _currentUser = list
-          .map((e) => AppUser.fromJson(e as Map<String, dynamic>))
-          .where((u) => u.id == id)
-          .firstOrNull;
-      return _currentUser != null;
-    } catch (_) {
-      return false;
-    }
+    await loadCurrentUser();
+    return _currentUser != null;
   }
-
-  static String hashPassword(String password) => _hash(password);
 }

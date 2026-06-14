@@ -3,29 +3,44 @@ import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _email = TextEditingController();
-  final _pass  = TextEditingController();
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _email    = TextEditingController();
+  final _username = TextEditingController();
+  final _pass     = TextEditingController();
   bool _loading = false;
   String? _error;
 
   @override
   void dispose() {
     _email.dispose();
+    _username.dispose();
     _pass.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _register() async {
+    final email    = _email.text.trim();
+    final username = _username.text.trim();
+    final password = _pass.text;
+
+    if (email.isEmpty || username.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Compila tutti i campi');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _error = 'La password deve essere di almeno 6 caratteri');
+      return;
+    }
+
     setState(() { _loading = true; _error = null; });
-    final err = await AuthService().login(_email.text.trim(), _pass.text);
+    final err = await AuthService().register(email, password, username);
     if (!mounted) return;
     if (err == null) {
       context.go('/dashboard');
@@ -49,20 +64,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 12),
                 const Text('stonks', style: TextStyle(color: kText, fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                const Text('Portfolio Tracker', style: TextStyle(color: kMuted, fontSize: 14)),
+                const Text('Crea un account', style: TextStyle(color: kMuted, fontSize: 14)),
                 const SizedBox(height: 40),
                 TextField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(labelText: 'Email'),
-                  onSubmitted: (_) => _login(),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _username,
+                  decoration: const InputDecoration(labelText: 'Username'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _pass,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  onSubmitted: (_) => _login(),
+                  decoration: const InputDecoration(labelText: 'Password (min 6 caratteri)'),
+                  onSubmitted: (_) => _register(),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
@@ -72,20 +91,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _loading ? null : _login,
+                    onPressed: _loading ? null : _register,
                     child: _loading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Accedi'),
+                        : const Text('Crea account'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Non hai un account? ', style: TextStyle(color: kMuted, fontSize: 13)),
+                    const Text('Hai gia un account? ', style: TextStyle(color: kMuted, fontSize: 13)),
                     GestureDetector(
-                      onTap: () => context.go('/register'),
-                      child: const Text('Registrati', style: TextStyle(color: kGreen, fontSize: 13, fontWeight: FontWeight.w600)),
+                      onTap: () => context.go('/login'),
+                      child: const Text('Accedi', style: TextStyle(color: kGreen, fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),

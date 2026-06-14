@@ -1,5 +1,5 @@
 name: stonks
-description: Portfolio tracker — getquin clone with GitHub JSON backend.
+description: Portfolio tracker — getquin clone, Supabase backend.
 publish_to: none
 version: 1.0.0+1
 
@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.3.4
   shimmer: ^3.0.0
   crypto: ^3.0.6
+  supabase_flutter: ^2.9.0
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
