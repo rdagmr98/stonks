@@ -36,10 +36,26 @@ final allQuotesProvider = FutureProvider<Map<String, Quote?>>((ref) async {
   return MarketService().fetchQuotes(symbols);
 });
 
-// Portfolio summary computed from holdings + quotes
+// Exchange rates: all currencies → EUR
+final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
+  final holdings = await ref.watch(holdingsProvider.future);
+  final currencies = holdings.map((h) => h.currency).toSet().toList();
+  return MarketService().getExchangeRates(currencies, 'EUR');
+});
+
+// Price history for a symbol
+final priceHistoryProvider = FutureProvider.family<List<PricePoint>, (String, String)>(
+  (ref, args) async {
+    final (symbol, range) = args;
+    return MarketService().fetchHistory(symbol, range);
+  },
+);
+
+// Portfolio summary with currency conversion to EUR
 final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
   final holdings = await ref.watch(holdingsProvider.future);
   final quotes = await ref.watch(allQuotesProvider.future);
+  final fxRates = await ref.watch(exchangeRatesProvider.future);
 
   double totalValue = 0;
   double totalCost = 0;
@@ -47,11 +63,15 @@ final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
 
   for (final h in holdings) {
     final q = quotes[h.symbol];
-    final price = q?.price ?? h.avgCost;
-    final value = h.shares * price;
+    final quoteCurrency = q?.currency ?? h.currency;
+    final fxToEur = fxRates[quoteCurrency] ?? 1.0;
+    final costFxToEur = fxRates[h.currency] ?? 1.0;
+
+    final priceEur = (q?.price ?? h.avgCost) * fxToEur;
+    final value = h.shares * priceEur;
     totalValue += value;
-    totalCost += h.totalCost;
-    dailyChange += h.shares * (q?.change ?? 0);
+    totalCost += h.totalCost * costFxToEur;
+    dailyChange += h.shares * (q?.change ?? 0) * fxToEur;
   }
 
   return PortfolioSummary(
