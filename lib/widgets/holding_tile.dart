@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../models/holding.dart';
 import '../models/quote.dart';
@@ -24,7 +25,10 @@ class HoldingTile extends StatelessWidget {
     final dayColor = dayChange >= 0 ? kGreen : kRed;
 
     return Card(
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/holding', extra: holding),
+        child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
@@ -60,6 +64,7 @@ class HoldingTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
