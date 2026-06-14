@@ -12,26 +12,20 @@ import 'screens/watchlist/watchlist_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/shell_screen.dart';
 import 'services/auth_service.dart';
-import 'services/gh_db_service.dart';
 
 final router = GoRouter(
-  initialLocation: '/setup',
+  initialLocation: '/login',
   redirect: (context, state) {
-    final hasToken = GhDbService().hasToken;
     final loggedIn = AuthService().isLoggedIn;
     final loc = state.matchedLocation;
 
-    if (!hasToken) {
-      return loc == '/setup' ? null : '/setup';
-    }
     if (!loggedIn) {
-      return (loc == '/login' || loc == '/setup') ? null : '/login';
+      return loc == '/login' ? null : '/login';
     }
-    if (loc == '/login' || loc == '/setup') return '/dashboard';
+    if (loc == '/login') return '/dashboard';
     return null;
   },
   routes: [
-    GoRoute(path: '/setup', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/add-transaction', builder: (_, __) => const AddTransactionScreen()),
     GoRoute(path: '/import-csv', builder: (_, __) => const ImportCsvScreen()),

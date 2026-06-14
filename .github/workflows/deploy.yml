@@ -34,7 +34,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href "/stonks/"
+        run: flutter build web --release --base-href "/stonks/" --dart-define=WORKER_URL=https://stonks-worker.rdagmr98.workers.dev
 
       - uses: actions/upload-pages-artifact@v3
         with:

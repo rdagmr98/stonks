@@ -18,19 +18,24 @@ class AuthService {
       sha256.convert(utf8.encode(password)).toString();
 
   Future<bool> login(String username, String password) async {
+    final bearer = _hash(password);
+    await _db.setBearer(bearer);
     try {
       final (list, _) = await _db.readList('users.json');
-      final hash = _hash(password);
       final match = list
           .map((e) => AppUser.fromJson(e as Map<String, dynamic>))
-          .where((u) => u.username == username && u.passwordHash == hash)
+          .where((u) => u.username == username && u.passwordHash == bearer)
           .firstOrNull;
-      if (match == null) return false;
+      if (match == null) {
+        await _db.clearBearer();
+        return false;
+      }
       _currentUser = match;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('current_user_id', match.id);
       return true;
     } catch (_) {
+      await _db.clearBearer();
       return false;
     }
   }
@@ -39,10 +44,11 @@ class AuthService {
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('current_user_id');
-    _db.invalidateAll();
+    await _db.clearBearer();
   }
 
   Future<bool> tryAutoLogin() async {
+    if (!_db.hasToken) return false;
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getString('current_user_id');
     if (id == null) return false;
