@@ -1,95 +1,76 @@
 # Stonks — Flutter Portfolio Tracker
 
-Repo app: `rdagmr98/stonks` | Repo dati: `rdagmr98/stonks-data`
+Repo app: `rdagmr98/stonks`
 Vault Obsidian: `C:\Users\Gianmarco\ObsidianVault\Stonks\Stonks.md`
 
 ## Release workflow
 ```
-flutter build apk --release
-git add lib/...
-git commit -m "..."
-git push origin main   ← autorizzato, sempre senza chiedere
+flutter build web --release --base-href "/stonks/" --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
+git add lib/... && git commit -m "..." && git push origin main
 ```
 
 ## Architettura
 - Flutter app dark-theme (GitHub-inspired: kBg/kSurface/kCard/kGreen/kRed)
-- Clone di getquin — portfolio tracker azionario/ETF/crypto
-- `GhDbService`: singleton, GitHub API REST, SHA versioning, retry 3x su 409, cache in-memoria
+- Clone di getquin — portfolio tracker azionario/ETF/crypto multi-utente
+- **Backend: Supabase** (PostgreSQL + RLS + auth integrata)
+  - Tabelle: `profiles`, `holdings`, `transactions`, `watchlist`, `wallet_connections`
+  - RLS: ogni utente vede solo i propri dati (`auth.uid() = user_id`)
+  - Trigger: auto-crea `profiles` row su registrazione
 - `MarketService`: Yahoo Finance API v8, cache 5 min, cambio valuta via `{FROM}{TO}=X`
-- DB: `rdagmr98/stonks-data` → `users.json`, `portfolio.json`, `transactions.json`, `watchlist.json`
+- `WalletService`: HMAC client-side Binance/Coinbase/Kraken; Blockstream/Etherscan/Solana RPC per indirizzi
 
 ## Struttura lib/
 ```
 lib/
-├── main.dart
-├── router.dart
+├── main.dart                 — Supabase.initialize + tryAutoLogin
+├── router.dart               — go_router: /login /register /dashboard /wallets ecc
 ├── theme/app_theme.dart
 ├── models/
-│   ├── holding.dart          — posizione (symbol, shares, avgCost)
-│   ├── transaction.dart      — transazione (buy/sell/dividend)
-│   ├── watchlist_item.dart   — item watchlist + target price
-│   ├── app_user.dart         — utente con ruolo
-│   └── quote.dart            — quotazione live (price, change, changePercent)
+│   ├── holding.dart
+│   ├── transaction.dart
+│   ├── watchlist_item.dart
+│   ├── app_user.dart         — id/email/username/currency (da profiles Supabase)
+│   ├── wallet_connection.dart — exchange API o indirizzo crypto
+│   └── quote.dart
 ├── services/
-│   ├── gh_db_service.dart    — GitHub JSON backend
-│   ├── portfolio_service.dart — CRUD holdings/tx/watchlist + recompute holding
-│   ├── market_service.dart   — prezzi live Yahoo Finance
-│   ├── auth_service.dart     — login/logout/auto-login (SharedPreferences)
-│   └── crypto_service.dart   — AES-CBC encrypt/decrypt
-├── providers/
-│   └── providers.dart        — Riverpod providers + PortfolioSummary
+│   ├── auth_service.dart     — Supabase auth: login/register/logout/autoLogin
+│   ├── portfolio_service.dart — CRUD Supabase: holdings/transactions/watchlist
+│   ├── wallet_service.dart   — CRUD wallet_connections + fetch bilanci
+│   └── market_service.dart   — prezzi live Yahoo Finance
+├── providers/providers.dart
 ├── screens/
-│   ├── auth/login_screen.dart
-│   ├── dashboard/dashboard_screen.dart  — valore totale, P&L, allocazione pie
-│   ├── portfolio/
-│   │   ├── portfolio_screen.dart        — lista holdings ordinata per valore
-│   │   └── holding_detail_screen.dart  — dettaglio: grafico storico, posizione, transazioni
-│   ├── transactions/
-│   │   ├── transactions_screen.dart     — lista tx con swipe-to-delete
-│   │   ├── add_transaction_screen.dart — form buy/sell/dividend
-│   │   └── import_csv_screen.dart      — import CSV bulk con anteprima
-│   ├── dividends/dividends_screen.dart — tracker dividendi: totale, bar chart mensile, per simbolo
-│   ├── watchlist/watchlist_screen.dart  — watchlist con target price
-│   └── shell_screen.dart               — NavigationBar 5 tab
-└── widgets/
-    ├── holding_tile.dart      — card holding con P&L e variazione giornaliera
-    └── allocation_chart.dart  — PieChart allocazione per simbolo
+│   ├── auth/
+│   │   ├── login_screen.dart    — email + password + link Registrati
+│   │   └── register_screen.dart — email + username + password
+│   ├── dashboard/dashboard_screen.dart
+│   ├── portfolio/portfolio_screen.dart + holding_detail_screen.dart
+│   ├── transactions/transactions_screen.dart + add_transaction_screen.dart + import_csv_screen.dart
+│   ├── dividends/dividends_screen.dart
+│   ├── watchlist/watchlist_screen.dart
+│   ├── wallets/wallet_connections_screen.dart  — exchange API + indirizzi crypto
+│   ├── settings/settings_screen.dart           — info account + logout
+│   └── shell_screen.dart
+└── widgets/holding_tile.dart + allocation_chart.dart
 ```
 
-## Schermate
-| Tab | Screen | Funzione |
-|-----|--------|----------|
-| Home | dashboard | Valore totale, P&L oggi/totale, pie allocazione, lista holdings |
-| Portfolio | portfolio | Lista holdings ordinata per valore, FAB → add transaction |
-| Transazioni | transactions | Storia completa, swipe-to-delete, FAB → add |
-| Watchlist | watchlist | Lista con prezzo live + target, FAB → add |
+## Variabili d'ambiente (Supabase)
+- `SUPABASE_URL` — URL progetto Supabase (pubblico, sicuro in bundle)
+- `SUPABASE_ANON_KEY` — anon key Supabase (pubblico, sicuro via RLS)
 
-## Utente default
-- username: `gianmarco` | password: `stonks123`
-- SHA-256: `43c7f47090a7225a6da84c491e44971211e4ee47aee683b9be242f6d48d08b8a`
-
-## Variabili d'ambiente
-- `GH_TOKEN` — Personal Access Token GitHub (scope: repo)
-- `STONKS_AES_KEY` — chiave AES-256 base64 (opzionale, default built-in)
-
-## Backend — Cloudflare Worker
-- Repo: `stonks/worker/` — Hono + TypeScript, deploy su `stonks-worker.rdagmr98.workers.dev`
-- CF secrets da settare: `GH_TOKEN` (PAT GitHub), `AUTH_PASSWORD` (sha256 di stonks123)
-- Exchange keys opzionali: `COINBASE_KEY/SECRET`, `BINANCE_KEY/SECRET`, `KRAKEN_KEY/SECRET`
-- Flutter usa `--dart-define=WORKER_URL=https://stonks-worker.rdagmr98.workers.dev` in deploy.yml
-- Auth flow: sha256(password) → Bearer token → worker verifica contro AUTH_PASSWORD CF secret
-- GhDbService non chiama più GitHub direttamente — tutto passa per il worker
+## Setup Supabase (da fare una volta)
+1. Crea progetto su supabase.com
+2. Esegui `supabase/schema.sql` nell'SQL Editor del progetto
+3. Copia Project URL + anon key
+4. Aggiorna deploy.yml con `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...`
 
 ## STATO SESSIONE — aggiornato 2026-06-14
-- App funzionale con 5 tab: Home, Portfolio, Transazioni, Dividendi, Watchlist.
-- `HoldingDetailScreen`: grafico LineChart storico, selettore range, linea pm tratteggiata, posizione card, lista tx.
-- `DividendsScreen` (tab 4): totale all-time, bar chart mensile fl_chart, breakdown per simbolo con progress bar, lista transazioni tipo dividend.
-- `ImportCsvScreen` (`/import-csv`): parsing CSV con anteprima, supporto date multiple, normalizzazione tipo (acquisto/buy/etc), import bulk sequenziale.
-- `.github/workflows/build.yml`: CI che builda APK split-per-abi su ogni push main, artefatti 30gg.
-- `worker/`: Cloudflare Worker completo — proxy GitHub + Coinbase/Binance/Kraken. PUSH OK.
-- Pendente: deploy worker (`wrangler login` + `wrangler secret put` + `wrangler deploy`)
+- Migrazione Supabase completa: auth multi-utente, tutte le tabelle con RLS.
+- `gh_db_service.dart` eliminato, `stonks-data` repo non più usata.
+- `worker/` presente ma non deployato (non più necessario con Supabase).
+- Login con email (non username), registrazione pubblica via `/register`.
+- `WalletConnectionsScreen`: collega exchange API + indirizzi BTC/ETH/SOL, sync bilanci.
 - TODO:
-  - [ ] Deploy worker (utente deve eseguire wrangler login e wrangler deploy)
-  - [ ] Verificare URL worker dopo deploy e aggiornare deploy.yml se diverso
+  - [ ] Utente crea progetto Supabase e manda URL + anon key → aggiornare deploy.yml
+  - [ ] (Opzionale) Etherscan API key per bilanci ETH
   - [ ] Ricerca simbolo/lookup nel form add-transaction
   - [ ] Performance chart portafoglio storico (value nel tempo)
