@@ -72,12 +72,24 @@ lib/
 - `GH_TOKEN` — Personal Access Token GitHub (scope: repo)
 - `STONKS_AES_KEY` — chiave AES-256 base64 (opzionale, default built-in)
 
+## Backend — Cloudflare Worker
+- Repo: `stonks/worker/` — Hono + TypeScript, deploy su `stonks-worker.rdagmr98.workers.dev`
+- CF secrets da settare: `GH_TOKEN` (PAT GitHub), `AUTH_PASSWORD` (sha256 di stonks123)
+- Exchange keys opzionali: `COINBASE_KEY/SECRET`, `BINANCE_KEY/SECRET`, `KRAKEN_KEY/SECRET`
+- Flutter usa `--dart-define=WORKER_URL=https://stonks-worker.rdagmr98.workers.dev` in deploy.yml
+- Auth flow: sha256(password) → Bearer token → worker verifica contro AUTH_PASSWORD CF secret
+- GhDbService non chiama più GitHub direttamente — tutto passa per il worker
+
 ## STATO SESSIONE — aggiornato 2026-06-14
 - App funzionale con 5 tab: Home, Portfolio, Transazioni, Dividendi, Watchlist.
 - `HoldingDetailScreen`: grafico LineChart storico, selettore range, linea pm tratteggiata, posizione card, lista tx.
 - `DividendsScreen` (tab 4): totale all-time, bar chart mensile fl_chart, breakdown per simbolo con progress bar, lista transazioni tipo dividend.
 - `ImportCsvScreen` (`/import-csv`): parsing CSV con anteprima, supporto date multiple, normalizzazione tipo (acquisto/buy/etc), import bulk sequenziale.
 - `.github/workflows/build.yml`: CI che builda APK split-per-abi su ogni push main, artefatti 30gg.
+- `worker/`: Cloudflare Worker completo — proxy GitHub + Coinbase/Binance/Kraken. PUSH OK.
+- Pendente: deploy worker (`wrangler login` + `wrangler secret put` + `wrangler deploy`)
 - TODO:
+  - [ ] Deploy worker (utente deve eseguire wrangler login e wrangler deploy)
+  - [ ] Verificare URL worker dopo deploy e aggiornare deploy.yml se diverso
   - [ ] Ricerca simbolo/lookup nel form add-transaction
   - [ ] Performance chart portafoglio storico (value nel tempo)
